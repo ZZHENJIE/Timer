@@ -1,13 +1,28 @@
-pub trait Widget {
+pub trait Widget: Sized {
     type Message: Clone;
 
     fn into_message(&self, message: Self::Message) -> crate::Message;
     fn update(&self, message: Self::Message) -> iced::Task<crate::Message>;
     fn view(&self) -> iced::Element<'_, crate::Message>;
+
+    fn default_update(widget: &Option<Self>, message: Self::Message) -> iced::Task<crate::Message> {
+        if let Some(widget) = widget {
+            widget.update(message)
+        } else {
+            iced::Task::none()
+        }
+    }
+    fn default_view(widget: &Option<Self>) -> iced::Element<'_, crate::Message> {
+        if let Some(widget) = widget {
+            widget.view()
+        } else {
+            iced::widget::space().into()
+        }
+    }
 }
 
 pub trait Window: Widget + Clone {
-    fn new(id: &iced::window::Id) -> Self;
+    fn new(id: iced::window::Id) -> Self;
     fn id(&self) -> &iced::window::Id;
-    fn settings(settings: &crate::Settings) -> iced::window::Settings;
+    fn reload_settings(&self, settings: &crate::Settings) -> iced::Task<crate::Message>;
 }

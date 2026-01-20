@@ -19,7 +19,7 @@ impl From<WindowLevel> for iced::window::Level {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct Window {
+pub struct MainWindow {
     pub width: f32,
     pub height: f32,
     pub pos_x: f32,
@@ -29,7 +29,7 @@ pub struct Window {
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct Settings {
-    pub window: Window,
+    pub main_window: MainWindow,
 }
 
 impl Default for Settings {
@@ -68,13 +68,5 @@ impl Settings {
             info!("Failed to write settings.toml: {}", err);
             panic!("{}", err);
         });
-    }
-    pub fn window(&self) -> iced::window::Settings {
-        let mut default = iced::window::Settings::default();
-        default.level = self.window.level.into();
-        default
-    }
-    pub fn settings(&self) -> iced::Settings {
-        iced::Settings::default()
     }
 }

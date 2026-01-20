@@ -2,6 +2,7 @@ use crate::widget::widget::{Widget, Window};
 use iced::{
     Task,
     widget::{button, column},
+    window,
 };
 
 #[derive(Clone)]
@@ -16,14 +17,19 @@ pub struct MainWindow {
 }
 
 impl Window for MainWindow {
-    fn new(id: &iced::window::Id) -> Self {
-        MainWindow { id: id.clone() }
+    fn new(id: iced::window::Id) -> Self {
+        MainWindow { id }
     }
     fn id(&self) -> &iced::window::Id {
         &self.id
     }
-    fn settings(settings: &crate::Settings) -> iced::window::Settings {
-        iced::window::Settings::default()
+    fn reload_settings(&self, settings: &crate::Settings) -> iced::Task<crate::Message> {
+        let main_window = &settings.main_window;
+        let pos = iced::Point::new(main_window.pos_x, main_window.pos_y);
+        let size = iced::Size::new(main_window.width, main_window.height);
+        window::move_to(self.id.clone(), pos)
+            .chain(window::resize(self.id.clone(), size))
+            .chain(window::set_level(self.id.clone(), main_window.level.into()))
     }
 }
 
@@ -47,13 +53,6 @@ impl Widget for MainWindow {
     }
 
     fn into_message(&self, message: Self::Message) -> crate::Message {
-        match message {
-            Message::StartClicked => {
-                crate::Message::MainWindow(self.id.clone(), Message::StartClicked)
-            }
-            Message::StopClicked => {
-                crate::Message::MainWindow(self.id.clone(), Message::StopClicked)
-            }
-        }
+        crate::Message::MainWindow(message)
     }
 }

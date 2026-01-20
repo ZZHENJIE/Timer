@@ -1,2 +1,2 @@
+pub mod mainwindow;
 pub mod widget;
-pub mod window;

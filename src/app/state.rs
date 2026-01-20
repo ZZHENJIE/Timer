@@ -1,74 +1,46 @@
 use crate::{
     Message, Settings,
     widget::{
+        mainwindow::MainWindow,
         widget::{Widget, Window},
-        window::{WindowType, mainwindow::MainWindow},
     },
 };
 use iced::Task;
-use std::collections::HashMap;
 
 pub struct State {
     settings: Settings,
-    windows: HashMap<iced::window::Id, WindowType>,
+    main_window: Option<MainWindow>,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             settings: Settings::new(),
-            windows: HashMap::new(),
+            main_window: None,
         }
     }
 }
 
 impl State {
-    pub fn new() -> (Self, iced::Task<Message>) {
-        let state = Self::default();
-        let (_, task) = iced::window::open(MainWindow::settings(&state.settings));
-        (
-            state,
-            task.map(move |id| Message::CreateWindow(id, WindowType::Main(MainWindow::new(&id)))),
-        )
-    }
-
-    pub fn name() -> &'static str {
-        "Timer"
-    }
-
-    pub fn settings(&self) -> iced::Settings {
-        self.settings.settings()
-    }
-
     pub fn subscription(&self) -> iced::Subscription<Message> {
-        iced::Subscription::none()
+        iced::window::open_events().map(Message::WindowOpened)
     }
 
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::CreateWindow(id, window) => {
-                self.windows.insert(id, window);
-                Task::none()
-            }
-            Message::MainWindow(id, message) => {
-                if let Some(window) = self.windows.get(&id) {
-                    match window {
-                        WindowType::Main(window) => window.update(message),
-                    }
+            Message::WindowOpened(id) => {
+                self.main_window = Some(MainWindow::new(id));
+                if let Some(window) = &self.main_window {
+                    window.reload_settings(&self.settings)
                 } else {
                     Task::none()
                 }
             }
+            Message::MainWindow(message) => Widget::default_update(&self.main_window, message),
         }
     }
 
-    pub fn view(&self, id: iced::window::Id) -> iced::Element<'_, Message> {
-        if let Some(window) = self.windows.get(&id) {
-            match window {
-                WindowType::Main(window) => window.view(),
-            }
-        } else {
-            iced::widget::space().into()
-        }
+    pub fn view(&self) -> iced::Element<'_, Message> {
+        Widget::default_view(&self.main_window)
     }
 }

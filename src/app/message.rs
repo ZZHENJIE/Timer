@@ -1,7 +1,7 @@
-use crate::widget::window::{WindowType, mainwindow};
+use crate::widget::mainwindow;
 
 #[derive(Clone)]
 pub enum Message {
-    CreateWindow(iced::window::Id, WindowType),
-    MainWindow(iced::window::Id, mainwindow::Message),
+    WindowOpened(iced::window::Id),
+    MainWindow(mainwindow::Message),
 }
