@@ -1,7 +1,7 @@
 use crate::widget::widget::Widget;
 use iced::{
     Task,
-    widget::{button, column},
+    widget::{button, column, text},
     window,
 };
 
@@ -9,16 +9,18 @@ use iced::{
 pub enum Message {
     StartClicked,
     StopClicked,
+    SetValue(u64),
 }
 
 #[derive(Clone)]
 pub struct MainWindow {
     id: iced::window::Id,
+    value: u64,
 }
 
 impl MainWindow {
     pub fn new(id: iced::window::Id) -> Self {
-        MainWindow { id }
+        MainWindow { id, value: 0 }
     }
     pub fn id(&self) -> &iced::window::Id {
         &self.id
@@ -36,23 +38,36 @@ impl MainWindow {
 impl Widget for MainWindow {
     type Message = Message;
 
-    fn update(&self, message: Self::Message) -> iced::Task<crate::Message> {
+    fn update(&mut self, message: Self::Message) -> iced::Task<crate::Message> {
         match message {
-            Message::StartClicked => println!("StartClicked"),
-            Message::StopClicked => println!("StopClicked"),
+            Message::StartClicked => Task::future(async move {
+                let client = reqwest::Client::new();
+                let response = client.get("https://time.akamai.com").send().await.unwrap();
+                let response_text = response.text().await.unwrap();
+                let time = response_text.parse::<u64>().unwrap();
+                Self::into_message(Message::SetValue(time))
+            }),
+            Message::StopClicked => {
+                println!("StopClicked");
+                Task::none()
+            }
+            Message::SetValue(value) => {
+                self.value = value;
+                Task::none()
+            }
         }
-        Task::none()
     }
 
     fn view(&self) -> iced::Element<'_, crate::Message> {
         column![
-            button("Start").on_press(self.into_message(Message::StartClicked)),
-            button("Stop").on_press(self.into_message(Message::StopClicked))
+            button("Start").on_press(Self::into_message(Message::StartClicked)),
+            button("Stop").on_press(Self::into_message(Message::StopClicked)),
+            text(self.value)
         ]
         .into()
     }
 
-    fn into_message(&self, message: Self::Message) -> crate::Message {
+    fn into_message(message: Self::Message) -> crate::Message {
         crate::Message::MainWindow(message)
     }
 }

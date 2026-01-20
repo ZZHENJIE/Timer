@@ -33,7 +33,7 @@ impl State {
                     Task::none()
                 }
             }
-            Message::MainWindow(message) => Widget::default_update(&self.main_window, message),
+            Message::MainWindow(message) => Widget::default_update(&mut self.main_window, message),
         }
     }
 
