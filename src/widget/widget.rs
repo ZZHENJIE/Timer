@@ -20,9 +20,3 @@ pub trait Widget: Sized {
         }
     }
 }
-
-pub trait Window: Widget + Clone {
-    fn new(id: iced::window::Id) -> Self;
-    fn id(&self) -> &iced::window::Id;
-    fn reload_settings(&self, settings: &crate::Settings) -> iced::Task<crate::Message>;
-}

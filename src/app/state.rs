@@ -1,9 +1,6 @@
 use crate::{
     Message, Settings,
-    widget::{
-        mainwindow::MainWindow,
-        widget::{Widget, Window},
-    },
+    widget::{mainwindow::MainWindow, widget::Widget},
 };
 use iced::Task;
 

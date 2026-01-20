@@ -1,4 +1,4 @@
-use crate::widget::widget::{Widget, Window};
+use crate::widget::widget::Widget;
 use iced::{
     Task,
     widget::{button, column},
@@ -16,14 +16,14 @@ pub struct MainWindow {
     id: iced::window::Id,
 }
 
-impl Window for MainWindow {
-    fn new(id: iced::window::Id) -> Self {
+impl MainWindow {
+    pub fn new(id: iced::window::Id) -> Self {
         MainWindow { id }
     }
-    fn id(&self) -> &iced::window::Id {
+    pub fn id(&self) -> &iced::window::Id {
         &self.id
     }
-    fn reload_settings(&self, settings: &crate::Settings) -> iced::Task<crate::Message> {
+    pub fn reload_settings(&self, settings: &crate::Settings) -> iced::Task<crate::Message> {
         let main_window = &settings.main_window;
         let pos = iced::Point::new(main_window.pos_x, main_window.pos_y);
         let size = iced::Size::new(main_window.width, main_window.height);
