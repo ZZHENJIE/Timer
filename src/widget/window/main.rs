@@ -26,7 +26,8 @@ impl Window for MainWindow {
         self.id.clone()
     }
     fn load_settings(_: &crate::Settings) -> window::Settings {
-        window::Settings::default()
+        let default = window::Settings::default();
+        default
     }
     fn settings(&self) -> iced::Task<crate::Message> {
         Task::none()
@@ -34,39 +35,44 @@ impl Window for MainWindow {
     fn title(&self) -> String {
         "Timer".into()
     }
+    fn close(&self) -> iced::Task<crate::Message> {
+        iced::exit()
+    }
 }
 
 impl Widget for MainWindow {
-    type Message = crate::Message;
+    type Message = InnerMessage;
 
+    fn into_message(&self, message: Self::Message) -> crate::Message {
+        crate::Message::MainWindow(self.id(), message)
+    }
     fn update(&mut self, message: Self::Message) -> iced::Task<crate::Message> {
-        if let crate::Message::MainWindow(msg) = message {
-            match msg {
-                InnerMessage::StartClicked => Task::future(async move {
+        match message {
+            InnerMessage::StartClicked => {
+                let id = self.id();
+                Task::future(async move {
                     let client = reqwest::Client::new();
                     let response = client.get("https://time.akamai.com").send().await.unwrap();
                     let response_text = response.text().await.unwrap();
                     let time = response_text.parse::<u64>().unwrap();
-                    crate::Message::MainWindow(InnerMessage::SetValue(time))
-                }),
-                InnerMessage::StopClicked => {
-                    println!("StopClicked");
-                    Task::none()
-                }
-                InnerMessage::SetValue(value) => {
-                    self.value = value;
-                    Task::none()
-                }
+                    crate::Message::MainWindow(id, InnerMessage::SetValue(time))
+                })
             }
-        } else {
-            Task::none()
+            InnerMessage::StopClicked => {
+                println!("StopClicked");
+                Task::none()
+            }
+            InnerMessage::SetValue(value) => {
+                self.value = value;
+                Task::none()
+            }
         }
     }
 
     fn view(&self) -> iced::Element<'_, crate::Message> {
         column![
-            button("Start").on_press(crate::Message::MainWindow(InnerMessage::StartClicked)),
-            button("Stop").on_press(crate::Message::MainWindow(InnerMessage::StopClicked)),
+            button("Start").on_press(self.into_message(InnerMessage::StartClicked)),
+            button("Stop").on_press(self.into_message(InnerMessage::StopClicked)),
             text(self.value)
         ]
         .into()

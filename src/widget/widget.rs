@@ -1,5 +1,6 @@
 pub trait Widget {
     type Message: Clone;
+    fn into_message(&self, message: Self::Message) -> crate::Message;
     fn update(&mut self, message: Self::Message) -> iced::Task<crate::Message>;
     fn view(&self) -> iced::Element<'_, crate::Message>;
 }
@@ -14,4 +15,5 @@ pub trait Window: Widget {
     where
         Self: Sized;
     fn settings(&self) -> iced::Task<crate::Message>;
+    fn close(&self) -> iced::Task<crate::Message>;
 }

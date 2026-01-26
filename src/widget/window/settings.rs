@@ -1,5 +1,5 @@
 use crate::widget::{Widget, Window};
-use iced::{window, Task};
+use iced::{Task, window};
 
 #[derive(Clone)]
 pub enum InnerMessage {}
@@ -25,10 +25,16 @@ impl Window for SettingsWindow {
     fn title(&self) -> String {
         "Settings".into()
     }
+    fn close(&self) -> iced::Task<crate::Message> {
+        Task::none()
+    }
 }
 
 impl Widget for SettingsWindow {
-    type Message = crate::Message;
+    type Message = InnerMessage;
+    fn into_message(&self, message: Self::Message) -> crate::Message {
+        crate::Message::SettingsWindow(self.id(), message)
+    }
     fn update(&mut self, _: Self::Message) -> iced::Task<crate::Message> {
         Task::none()
     }
