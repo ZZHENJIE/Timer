@@ -3,3 +3,4 @@ log.json
 .DS_Store
 .openignore
 logs
+settings.toml
