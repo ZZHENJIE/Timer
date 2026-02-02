@@ -1,18 +1,11 @@
-use tracing::level_filters::LevelFilter;
-use tracing_subscriber::{Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_appender::rolling;
+use tracing_subscriber::fmt::time::LocalTime;
 
 pub fn init() {
-    // open log file
-    let log_file = std::fs::File::options()
-        .create(true)
-        .append(true)
-        .open("log.json")
-        .expect("create/open log file");
-    // set log level filter
-    let file_layer = fmt::layer()
-        .json()
-        .with_writer(log_file)
-        .with_timer(fmt::time::LocalTime::rfc_3339())
-        .with_filter(LevelFilter::INFO);
-    tracing_subscriber::registry().with(file_layer).init();
+    let file_appender = rolling::daily("logs", "timer.log");
+
+    tracing_subscriber::fmt()
+        .with_timer(LocalTime::rfc_3339())
+        .with_writer(file_appender)
+        .init();
 }

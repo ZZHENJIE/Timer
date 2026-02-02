@@ -1,8 +1,17 @@
-use timer::State;
+use timer::{app::App, utils::settings::Settings};
 
-fn main() -> iced::Result {
+#[tokio::main]
+async fn main() -> eframe::Result {
     timer::utils::log::init();
-    iced::daemon(State::new, State::update, State::view)
-        .subscription(State::subscription)
-        .run()
+
+    eframe::run_native(
+        "Timer",
+        eframe::NativeOptions::default(),
+        Box::new(|cx| {
+            let settings = Settings::new();
+            let app = App::new(settings);
+            app.init(&cx.egui_ctx);
+            Ok(Box::new(app))
+        }),
+    )
 }
