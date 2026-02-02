@@ -1,6 +1,14 @@
+theme = "Dark"
+
 [window]
 width = 300
 height = 65
 x = 100
 y = 100
 level = "Normal"
+
+[style]
+timestamp_color = "#000000"
+timestamp_font_size = 14
+info_color = "#000000"
+info_font_size = 12

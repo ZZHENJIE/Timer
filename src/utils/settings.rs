@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
+#[derive(Deserialize, Serialize)]
+pub enum Theme {
+    Light,
+    Dark,
+}
+
 #[derive(Deserialize, Serialize, Clone, Copy, Debug, PartialEq)]
 pub enum WindowLevel {
     Normal,
@@ -8,17 +14,7 @@ pub enum WindowLevel {
     AlwaysOnTop,
 }
 
-impl Into<eframe::egui::WindowLevel> for WindowLevel {
-    fn into(self) -> eframe::egui::WindowLevel {
-        match self {
-            WindowLevel::Normal => eframe::egui::WindowLevel::Normal,
-            WindowLevel::AlwaysOnBottom => eframe::egui::WindowLevel::AlwaysOnBottom,
-            WindowLevel::AlwaysOnTop => eframe::egui::WindowLevel::AlwaysOnTop,
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Clone, Copy)]
+#[derive(Deserialize, Serialize)]
 pub struct Window {
     pub width: f32,
     pub height: f32,
@@ -27,9 +23,19 @@ pub struct Window {
     pub level: WindowLevel,
 }
 
-#[derive(Deserialize, Serialize, Clone, Copy)]
+#[derive(Deserialize, Serialize)]
+pub struct Style {
+    pub timestamp_color: String,
+    pub timestamp_font_size: f32,
+    pub info_color: String,
+    pub info_font_size: f32,
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct Settings {
     pub window: Window,
+    pub style: Style,
+    pub theme: Theme,
 }
 
 impl Default for Settings {
@@ -60,5 +66,24 @@ impl Settings {
             .unwrap_or_else(|err| panic!("Failed to serialize settings: {}", err));
         let _ = std::fs::write("settings.toml", string)
             .unwrap_or_else(|err| panic!("Failed to write settings.toml: {}", err));
+    }
+}
+
+impl Into<eframe::egui::WindowLevel> for WindowLevel {
+    fn into(self) -> eframe::egui::WindowLevel {
+        match self {
+            WindowLevel::Normal => eframe::egui::WindowLevel::Normal,
+            WindowLevel::AlwaysOnBottom => eframe::egui::WindowLevel::AlwaysOnBottom,
+            WindowLevel::AlwaysOnTop => eframe::egui::WindowLevel::AlwaysOnTop,
+        }
+    }
+}
+
+impl Into<eframe::egui::Theme> for Theme {
+    fn into(self) -> eframe::egui::Theme {
+        match self {
+            Theme::Dark => eframe::egui::Theme::Dark,
+            Theme::Light => eframe::egui::Theme::Light,
+        }
     }
 }
