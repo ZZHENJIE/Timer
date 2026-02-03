@@ -1,6 +1,6 @@
 use crate::utils::{
     assets::app_icon,
-    settings::{Settings, WindowLevel},
+    settings::{Settings, Theme, WindowLevel},
 };
 use eframe::egui::{
     self, Button, Color32, ComboBox, Context, Layout, RichText, Ui, Vec2, ViewportCommand, Window,
@@ -23,6 +23,7 @@ impl SettingsWindow {
     }
     pub fn init(&self, ctx: &Context) {
         let window_settings = &self.settings.window;
+        ctx.set_theme(self.settings.theme);
         ctx.send_viewport_cmd(ViewportCommand::Icon(Some(Arc::new(app_icon()))));
         ctx.send_viewport_cmd(ViewportCommand::InnerSize(Vec2::new(
             window_settings.width,
@@ -93,6 +94,7 @@ impl SettingsWindow {
                                 ui.end_row();
 
                                 self.timestamp_style_edit(ui);
+                                self.theme_select(ui);
                             });
 
                         ui.horizontal(|ui| {
@@ -106,6 +108,20 @@ impl SettingsWindow {
                     });
                 });
             });
+        }
+    }
+    fn theme_select(&mut self, ui: &mut Ui) {
+        ui.label("Theme");
+        let mut value = self.settings.theme.clone();
+        ui.horizontal(|ui| {
+            ui.radio_value(&mut value, Theme::Dark, "Dark");
+            ui.radio_value(&mut value, Theme::Light, "Light");
+            ui.radio_value(&mut value, Theme::System, "System");
+        });
+        ui.end_row();
+        if value != self.settings.theme {
+            self.settings.theme = value;
+            ui.ctx().set_theme(value);
         }
     }
     fn window_level_combobox(&mut self, ui: &mut Ui) {

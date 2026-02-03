@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone, Copy, PartialEq)]
 pub enum Theme {
     Light,
     Dark,
+    System,
 }
 
 #[derive(Deserialize, Serialize, Clone, Copy, Debug, PartialEq)]
@@ -79,11 +80,12 @@ impl Into<eframe::egui::WindowLevel> for WindowLevel {
     }
 }
 
-impl Into<eframe::egui::Theme> for Theme {
-    fn into(self) -> eframe::egui::Theme {
+impl Into<eframe::egui::ThemePreference> for Theme {
+    fn into(self) -> eframe::egui::ThemePreference {
         match self {
-            Theme::Dark => eframe::egui::Theme::Dark,
-            Theme::Light => eframe::egui::Theme::Light,
+            Theme::Dark => eframe::egui::ThemePreference::Dark,
+            Theme::Light => eframe::egui::ThemePreference::Light,
+            Theme::System => eframe::egui::ThemePreference::System,
         }
     }
 }

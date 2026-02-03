@@ -8,7 +8,7 @@ y = 100
 level = "Normal"
 
 [style]
-timestamp_color = "#000000"
+timestamp_color = "#628a9fff"
 timestamp_font_size = 14
 info_color = "#000000"
 info_font_size = 12
