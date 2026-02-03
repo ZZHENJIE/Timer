@@ -5,6 +5,9 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  push:
+    tags:
+      - 'v*'
 
 env:
   CARGO_TERM_COLOR: always
@@ -33,16 +36,25 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            binary_name: timer
           - os: macos-14
             target: aarch64-apple-darwin
+            binary_name: Timer
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            binary_name: Timer.exe
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
         run: rustup show
       - name: Build
         run: cargo build --release --all-features --target ${{ matrix.target }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_name }}-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/${{ matrix.binary_name }}
+          retention-days: 1
 
   test:
     name: Test
@@ -53,3 +65,24 @@ jobs:
         run: rustup show
       - name: Test
         run: cargo test --all-features
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/Timer.exe
+            artifacts/timer-x86_64-unknown-linux-gnu/timer
+            artifacts/Timer-aarch64-apple-darwin/Timer
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
