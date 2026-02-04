@@ -1,9 +1,9 @@
 pub mod assets;
 pub mod log;
 pub mod settings;
-pub mod settings_window;
 
 use chrono::{Local, LocalResult, TimeZone};
+use eframe::egui::Color32;
 use tracing::info;
 
 pub fn format_timestamp_to_local(timestamp: i64) -> String {
@@ -16,4 +16,11 @@ pub fn format_timestamp_to_local(timestamp: i64) -> String {
             "00:00:00".to_string()
         }
     }
+}
+
+pub fn string_to_color_hex(color: &str) -> Color32 {
+    Color32::from_hex(color).unwrap_or_else(|_| {
+        info!("Failed to parse color.");
+        Color32::WHITE
+    })
 }
