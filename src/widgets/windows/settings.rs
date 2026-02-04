@@ -1,22 +1,14 @@
 use crate::{
-    utils::{
-        assets::app_icon,
-        settings::{Theme, WindowLevel},
-        string_to_color_hex,
-    },
-    widgets::Widget,
+    settings::{Theme, WindowLevel},
+    utils::string_to_color_hex,
 };
 use eframe::egui::{self, Button, ComboBox, Layout, Ui, Vec2, ViewportCommand, Window, pos2};
-use std::sync::Arc;
 
-pub struct SettingsWindow {
-    is_visible: bool,
-}
+pub struct SettingsWindow {}
 
-impl Widget for SettingsWindow {
-    fn new(ctx: &eframe::egui::Context, settings: &crate::Settings) -> Self {
+impl SettingsWindow {
+    pub fn new(ctx: &eframe::egui::Context, settings: &crate::Settings) -> Self {
         ctx.set_theme(settings.theme);
-        ctx.send_viewport_cmd(ViewportCommand::Icon(Some(Arc::new(app_icon()))));
         ctx.send_viewport_cmd(ViewportCommand::InnerSize(Vec2::new(
             settings.window.width,
             settings.window.height,
@@ -26,45 +18,41 @@ impl Widget for SettingsWindow {
             settings.window.y,
         )));
         ctx.send_viewport_cmd(ViewportCommand::WindowLevel(settings.window.level.into()));
-        Self { is_visible: false }
+        Self {}
     }
-    fn update(&mut self, ui: &mut eframe::egui::Ui, settings: &mut crate::Settings) {
-        if self.is_visible {
-            Window::new("Settings").show(ui.ctx(), |ui| {
-                let ui_builder = egui::UiBuilder::new();
-                ui.scope_builder(ui_builder, |ui| {
-                    ui.with_layout(Layout::top_down(eframe::egui::Align::Center), |ui| {
-                        egui::Grid::new("my_grid")
-                            .num_columns(2)
-                            .spacing([40.0, 4.0])
-                            .striped(true)
-                            .show(ui, |ui| {
-                                ui.label("Window Level");
-                                self.window_level_combobox(ui, settings);
-                                ui.end_row();
+    pub fn update(&mut self, ui: &mut eframe::egui::Ui, settings: &mut crate::Settings) -> bool {
+        let mut is_hide = false;
+        Window::new("Settings").show(ui.ctx(), |ui| {
+            let ui_builder = egui::UiBuilder::new();
+            ui.scope_builder(ui_builder, |ui| {
+                ui.with_layout(Layout::top_down(eframe::egui::Align::Center), |ui| {
+                    egui::Grid::new("my_grid")
+                        .num_columns(2)
+                        .spacing([40.0, 4.0])
+                        .striped(true)
+                        .show(ui, |ui| {
+                            ui.label("Window Level");
+                            self.window_level_combobox(ui, settings);
+                            ui.end_row();
 
-                                self.timestamp_style_edit(ui, settings);
-                                self.theme_select(ui, settings);
-                            });
-
-                        ui.horizontal(|ui| {
-                            if ui.add(Button::new("Close")).clicked() {
-                                self.is_visible = false;
-                            }
+                            self.timestamp_style_edit(ui, settings);
+                            self.theme_select(ui, settings);
                         });
+
+                    ui.horizontal(|ui| {
+                        if ui.add(Button::new("Close")).clicked() {
+                            is_hide = true;
+                        }
                     });
                 });
             });
-        } else {
-            if ui.button("Settings").clicked() {
-                self.is_visible = true;
-            }
-        }
+        });
+        is_hide
     }
 }
 
 impl SettingsWindow {
-    pub fn timestamp_style_edit(&mut self, ui: &mut egui::Ui, settings: &mut crate::Settings) {
+    fn timestamp_style_edit(&mut self, ui: &mut egui::Ui, settings: &mut crate::Settings) {
         let mut color = string_to_color_hex(&settings.style.timestamp_color);
         ui.label("Timestamp Color");
         if ui.color_edit_button_srgba(&mut color).changed() {

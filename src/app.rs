@@ -1,6 +1,6 @@
 use crate::{
-    utils::settings::Settings,
-    widgets::{Widget, content::Content, windows::settings::SettingsWindow},
+    Settings,
+    widgets::{content::Content, windows::settings::SettingsWindow},
 };
 use eframe::egui;
 
@@ -14,8 +14,8 @@ impl App {
     pub fn new(ctx: &eframe::egui::Context) -> Self {
         let settings = Settings::new();
         Self {
-            content: Content::new(ctx, &settings),
             settings_window: SettingsWindow::new(ctx, &settings),
+            content: Content::new(ctx, &settings),
             settings,
         }
     }
@@ -27,8 +27,11 @@ impl eframe::App for App {
             let ui_builder = egui::UiBuilder::new();
             ui.scope_builder(ui_builder, |ui| {
                 ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                    self.content.update(ui, &mut self.settings);
-                    self.settings_window.update(ui, &mut self.settings);
+                    if self.content.update(ui, &mut self.settings) {
+                        if self.settings_window.update(ui, &mut self.settings) {
+                            self.content.close_settings_window();
+                        }
+                    }
                 });
             });
         });

@@ -1,12 +1,17 @@
-use crate::utils::{format_timestamp_to_local, settings::Style, string_to_color_hex};
 use eframe::egui::RichText;
 use egui_inbox::UiInbox;
 use std::time::Duration;
 use tracing::info;
 
+use crate::{
+    settings::Style,
+    utils::{format_timestamp_to_local, string_to_color_hex},
+};
+
 pub struct Content {
     timestamp: i64,
     inbox_timestamp: UiInbox<i64>,
+    settings_window_is_visible: bool,
 }
 
 impl Content {
@@ -17,14 +22,37 @@ impl Content {
     }
 }
 
-impl crate::widgets::Widget for Content {
-    fn new(_: &eframe::egui::Context, _: &crate::Settings) -> Self {
+impl Content {
+    pub fn new(_: &eframe::egui::Context, _: &crate::Settings) -> Self {
         let value = Self {
             timestamp: 0,
             inbox_timestamp: UiInbox::new(),
+            settings_window_is_visible: false,
         };
-        let sender = value.inbox_timestamp.sender().clone();
-        let _ = tokio::spawn(async move {
+        let _ = value.start();
+        value
+    }
+    pub fn update(&mut self, ui: &mut eframe::egui::Ui, settings: &mut crate::Settings) -> bool {
+        if ui
+            .label(self.timestamp_render(&settings.style))
+            .clicked_by(eframe::egui::PointerButton::Secondary)
+        {
+            self.settings_window_is_visible = true;
+        }
+        if let Some(response) = self.inbox_timestamp.read(ui).last() {
+            self.timestamp = response;
+        };
+        self.settings_window_is_visible
+    }
+    pub fn close_settings_window(&mut self) {
+        self.settings_window_is_visible = false;
+    }
+}
+
+impl Content {
+    fn start(&self) -> tokio::task::JoinHandle<()> {
+        let sender = self.inbox_timestamp.sender().clone();
+        tokio::spawn(async move {
             let client = reqwest::Client::new();
             let response = match client.get("https://time.akamai.com").send().await {
                 Ok(response) => response,
@@ -62,13 +90,6 @@ impl crate::widgets::Widget for Content {
                     info!("Error sending timestamp");
                 }
             };
-        });
-        value
-    }
-    fn update(&mut self, ui: &mut eframe::egui::Ui, settings: &mut crate::Settings) {
-        ui.label(self.timestamp_render(&settings.style));
-        if let Some(response) = self.inbox_timestamp.read(ui).last() {
-            self.timestamp = response;
-        };
+        })
     }
 }
