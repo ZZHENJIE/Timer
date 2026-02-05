@@ -36,6 +36,7 @@ impl SettingsWindow {
                             ui.end_row();
 
                             self.timestamp_style_edit(ui, settings);
+                            self.info_style_edit(ui, settings);
                             self.theme_select(ui, settings);
                         });
 
@@ -62,6 +63,18 @@ impl SettingsWindow {
 
         ui.label("Timestamp Font Size");
         ui.add(egui::DragValue::new(&mut settings.style.timestamp_font_size).speed(0.1));
+        ui.end_row();
+    }
+    fn info_style_edit(&mut self, ui: &mut egui::Ui, settings: &mut crate::Settings) {
+        let mut color = string_to_color_hex(&settings.style.info_color);
+        ui.label("Info Color");
+        if ui.color_edit_button_srgba(&mut color).changed() {
+            settings.style.info_color = color.to_hex();
+        }
+        ui.end_row();
+
+        ui.label("Info Font Size");
+        ui.add(egui::DragValue::new(&mut settings.style.info_font_size).speed(0.1));
         ui.end_row();
     }
     fn theme_select(&mut self, ui: &mut Ui, settings: &mut crate::Settings) {

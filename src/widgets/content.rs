@@ -4,6 +4,7 @@ use std::time::Duration;
 use tracing::info;
 
 use crate::{
+    economy::finviz,
     settings::Style,
     utils::{format_timestamp_to_local, string_to_color_hex},
 };
@@ -11,6 +12,8 @@ use crate::{
 pub struct Content {
     timestamp: i64,
     inbox_timestamp: UiInbox<i64>,
+    info: String,
+    inbox_info: UiInbox<String>,
     settings_window_is_visible: bool,
 }
 
@@ -20,6 +23,11 @@ impl Content {
             .color(string_to_color_hex(&style.timestamp_color))
             .size(style.timestamp_font_size)
     }
+    fn info_render(&self, style: &Style) -> RichText {
+        RichText::new(&self.info)
+            .color(string_to_color_hex(&style.info_color))
+            .size(style.info_font_size)
+    }
 }
 
 impl Content {
@@ -27,6 +35,8 @@ impl Content {
         let value = Self {
             timestamp: 0,
             inbox_timestamp: UiInbox::new(),
+            info: String::new(),
+            inbox_info: UiInbox::new(),
             settings_window_is_visible: false,
         };
         let _ = value.start();
@@ -39,8 +49,12 @@ impl Content {
         {
             self.settings_window_is_visible = true;
         }
+        ui.label(self.info_render(&settings.style));
         if let Some(response) = self.inbox_timestamp.read(ui).last() {
             self.timestamp = response;
+        };
+        if let Some(response) = self.inbox_info.read(ui).last() {
+            self.info = response;
         };
         self.settings_window_is_visible
     }
@@ -51,7 +65,8 @@ impl Content {
 
 impl Content {
     fn start(&self) -> tokio::task::JoinHandle<()> {
-        let sender = self.inbox_timestamp.sender().clone();
+        let timestamp_sender = self.inbox_timestamp.sender().clone();
+        let info_sender = self.inbox_info.sender().clone();
         tokio::spawn(async move {
             let client = reqwest::Client::new();
             let response = match client.get("https://time.akamai.com").send().await {
@@ -75,21 +90,43 @@ impl Content {
                     return;
                 }
             };
-            match sender.send(time) {
-                Ok(()) => {
-                    let mut interval = tokio::time::interval(Duration::from_secs(1));
-                    loop {
-                        interval.tick().await;
-                        time += 1;
-                        sender
-                            .send(time)
-                            .unwrap_or_else(|_| info!("Error sending timestamp"));
-                    }
-                }
-                Err(_) => {
-                    info!("Error sending timestamp");
+            let economy = match finviz::fetch(&client, time).await {
+                Ok(economy) => economy,
+                Err(err) => {
+                    info!("Error fetching economy data: {}", err);
+                    return;
                 }
             };
+            timestamp_sender
+                .send(time)
+                .expect("Error sending timestamp");
+
+            let mut interval = tokio::time::interval(Duration::from_secs(1));
+            loop {
+                interval.tick().await;
+                let mut count = 0;
+                let mut max_importance: u8 = 0;
+                time += 1;
+                timestamp_sender
+                    .send(time)
+                    .expect("Error sending timestamp");
+                for item in &economy {
+                    let value_difference = item.date_timestamp - time;
+                    if value_difference > 0 && value_difference <= 300 {
+                        count += 1;
+                        if max_importance < item.importance {
+                            max_importance = item.importance;
+                        }
+                    }
+                }
+                let info_result: String;
+                if count > 0 {
+                    info_result = format!("Count:{} Max:{}", count, max_importance);
+                } else {
+                    info_result = String::new();
+                }
+                info_sender.send(info_result).expect("Error sending info");
+            }
         })
     }
 }
